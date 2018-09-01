@@ -164,6 +164,9 @@ setup(name='scikit-bio',
           'hdmedians >= 0.13',
           'scikit-learn >= 0.19.1'
       ],
+      extras_requires={
+          'parasail': ['parasail'],
+      },
       classifiers=classifiers,
       package_data={
           'skbio.diversity.alpha.tests': ['data/qiime-191-tt/*'],
