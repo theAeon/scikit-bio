@@ -6,7 +6,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from unittest import TestCase, main, skip
+from unittest import TestCase, main
 import warnings
 
 import numpy as np
@@ -31,7 +31,6 @@ from skbio.alignment.parasail import (
     semiglobal_pairwise_align_protein,
     semiglobal_pairwise_align_nucleotide,
     semiglobal_pairwise_align,
-    SimpleSubstitutionMatrix
 )
 
 
@@ -98,45 +97,45 @@ class PairwiseAlignmentTests(TestCase):
 
     # TODO: duplicate of test_semiglobal_pairwise_align_custom_alphabet, remove
     # when nondegenerate_chars is removed
-    def test_semiglobal_pairwise_align_custom_alphabet_nondegenerate_chars(self):
-        custom_substitution_matrix = make_identity_substitution_matrix(
-            1, -1, alphabet=CustomSequence.nondegenerate_chars)
+    # def test_semiglobal_pairwise_align_custom_alphabet_nondegenerate_chars(self):
+    #     custom_substitution_matrix = make_identity_substitution_matrix(
+    #         1, -1, alphabet=CustomSequence.nondegenerate_chars)
 
-        custom_msa, custom_score, custom_start_end = semiglobal_pairwise_align(
-            CustomSequence("WXYZ"), CustomSequence("WXYYZZ"),
-            10, 5, custom_substitution_matrix)
+    #     custom_msa, custom_score, custom_start_end = semiglobal_pairwise_align(
+    #         CustomSequence("WXYZ"), CustomSequence("WXYYZZ"),
+    #         10, 5, custom_substitution_matrix)
 
-        # Expected values computed by running an equivalent alignment using the
-        # DNA alphabet with the following mapping:
-        #
-        #     W X Y Z
-        #     | | | |
-        #     A C G T
-        #
-        self.assertEqual(custom_msa, TabularMSA([CustomSequence('WXYZ^^'),
-                                                 CustomSequence('WXYYZZ')]))
-        self.assertEqual(custom_score, 2)
-        self.assertEqual(custom_start_end, [(0, 3), (0, 5)])
+    #     # Expected values computed by running an equivalent alignment using the
+    #     # DNA alphabet with the following mapping:
+    #     #
+    #     #     W X Y Z
+    #     #     | | | |
+    #     #     A C G T
+    #     #
+    #     self.assertEqual(custom_msa, TabularMSA([CustomSequence('WXYZ^^'),
+    #                                              CustomSequence('WXYYZZ')]))
+    #     self.assertEqual(custom_score, 2)
+    #     self.assertEqual(custom_start_end, [(0, 3), (0, 5)])
 
-    def test_semiglobal_pairwise_align_custom_alphabet(self):
-        custom_substitution_matrix = make_identity_substitution_matrix(
-            1, -1, alphabet=CustomSequence.definite_chars)
+    # def test_semiglobal_pairwise_align_custom_alphabet(self):
+    #     custom_substitution_matrix = make_identity_substitution_matrix(
+    #         1, -1, alphabet=CustomSequence.definite_chars)
 
-        custom_msa, custom_score, custom_start_end = semiglobal_pairwise_align(
-            CustomSequence("WXYZ"), CustomSequence("WXYYZZ"),
-            10, 5, custom_substitution_matrix)
+    #     custom_msa, custom_score, custom_start_end = semiglobal_pairwise_align(
+    #         CustomSequence("WXYZ"), CustomSequence("WXYYZZ"),
+    #         10, 5, custom_substitution_matrix)
 
-        # Expected values computed by running an equivalent alignment using the
-        # DNA alphabet with the following mapping:
-        #
-        #     W X Y Z
-        #     | | | |
-        #     A C G T
-        #
-        self.assertEqual(custom_msa, TabularMSA([CustomSequence('WXYZ^^'),
-                                                 CustomSequence('WXYYZZ')]))
-        self.assertEqual(custom_score, 2)
-        self.assertEqual(custom_start_end, [(0, 3), (0, 5)])
+    #     # Expected values computed by running an equivalent alignment using the
+    #     # DNA alphabet with the following mapping:
+    #     #
+    #     #     W X Y Z
+    #     #     | | | |
+    #     #     A C G T
+    #     #
+    #     self.assertEqual(custom_msa, TabularMSA([CustomSequence('WXYZ^^'),
+    #                                              CustomSequence('WXYYZZ')]))
+    #     self.assertEqual(custom_score, 2)
+    #     self.assertEqual(custom_start_end, [(0, 3), (0, 5)])
 
     # TODO: duplicate of test_local_pairwise_align_custom_alphabet, remove
     # when nondegenerate_chars is removed.
@@ -186,25 +185,23 @@ class PairwiseAlignmentTests(TestCase):
     #     self.assertEqual(custom_score, 40)
     #     self.assertEqual(custom_start_end, [(1, 16), (2, 14)])
 
-    @skip("dict as substitution matrix not yet supported")
-    def test_semiglobal_pairwise_align_invalid_type(self):
-        with self.assertRaisesRegex(TypeError,
-                                    "GrammaredSequence.*"
-                                    "TabularMSA.*'Sequence'"):
-            semiglobal_pairwise_align(DNA('ACGT'), Sequence('ACGT'), 1, 1, {})
+    # def test_semiglobal_pairwise_align_invalid_type(self):
+    #     with self.assertRaisesRegex(TypeError,
+    #                                 "GrammaredSequence.*"
+    #                                 "TabularMSA.*'Sequence'"):
+    #         semiglobal_pairwise_align(DNA('ACGT'), Sequence('ACGT'), 1, 1, {})
 
-    @skip("dict as substitution matrix not yet supported")
-    def test_semiglobal_pairwise_align_dtype_mismatch(self):
-        with self.assertRaisesRegex(TypeError,
-                                    "same dtype: 'DNA' != 'RNA'"):
-            semiglobal_pairwise_align(DNA('ACGT'), TabularMSA([RNA('ACGU')]),
-                                  1, 1, {})
+    # def test_semiglobal_pairwise_align_dtype_mismatch(self):
+    #     with self.assertRaisesRegex(TypeError,
+    #                                 "same dtype: 'DNA' != 'RNA'"):
+    #         semiglobal_pairwise_align(DNA('ACGT'), TabularMSA([RNA('ACGU')]),
+    #                               1, 1, {})
 
-        with self.assertRaisesRegex(TypeError,
-                                    "same dtype: 'DNA' != 'RNA'"):
-            semiglobal_pairwise_align(TabularMSA([DNA('ACGT')]),
-                                  TabularMSA([RNA('ACGU')]),
-                                  1, 1, {})
+    #     with self.assertRaisesRegex(TypeError,
+    #                                 "same dtype: 'DNA' != 'RNA'"):
+    #         semiglobal_pairwise_align(TabularMSA([DNA('ACGT')]),
+    #                               TabularMSA([RNA('ACGU')]),
+    #                               1, 1, {})
 
     def test_semiglobal_pairwise_align_protein(self):
         obs_msa, obs_score, obs_start_end = semiglobal_pairwise_align_protein(
@@ -503,7 +500,6 @@ class PairwiseAlignmentTests(TestCase):
         self.assertRaises(TypeError, local_pairwise_align_nucleotide,
                           DNA("ACGT"), 42)
 
-    @skip("dict as substitution matrix not yet supported")
     def test_nucleotide_aligners_use_substitution_matrices(self):
         alt_sub = make_identity_substitution_matrix(10, -10)
         # alternate substitution matrix yields different alignment (the
@@ -540,19 +536,17 @@ class PairwiseAlignmentTests(TestCase):
 
         self.assertNotEqual(msa_no_sub, msa_alt_sub)
         self.assertNotEqual(score_no_sub, score_alt_sub)
-        self.assertEqual(start_end_no_sub, start_end_alt_sub)
+        self.assertNotEqual(start_end_no_sub, start_end_alt_sub)
 
-    @skip("dict as substitution matrix not yet supported")
-    def test_local_pairwise_align_invalid_type(self):
-        with self.assertRaisesRegex(TypeError,
-                                    'GrammaredSequence.*Sequence'):
-            local_pairwise_align(DNA('ACGT'), Sequence('ACGT'), 1, 1, {})
+    # def test_local_pairwise_align_invalid_type(self):
+    #     with self.assertRaisesRegex(TypeError,
+    #                                 'GrammaredSequence.*Sequence'):
+    #         local_pairwise_align(DNA('ACGT'), Sequence('ACGT'), 1, 1, {})
 
-    @skip("dict as substitution matrix not yet supported")
-    def test_local_pairwise_align_type_mismatch(self):
-        with self.assertRaisesRegex(TypeError,
-                                    "same type: 'DNA' != 'RNA'"):
-            local_pairwise_align(DNA('ACGT'), RNA('ACGU'), 1, 1, {})
+    # def test_local_pairwise_align_type_mismatch(self):
+    #     with self.assertRaisesRegex(TypeError,
+    #                                 "same type: 'DNA' != 'RNA'"):
+    #         local_pairwise_align(DNA('ACGT'), RNA('ACGU'), 1, 1, {})
 
     def test_init_matrices_sw(self):
         expected_score_m = np.zeros((5, 4))

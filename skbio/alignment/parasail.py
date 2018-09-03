@@ -3,11 +3,8 @@ from skbio.alignment._tabular_msa import TabularMSA
 
 import parasail
 
-# Substitution matrix class hierarchy.
 
-# TODO Formalize the API
-
-class ParasailSubstitutionMatrix(object):
+class SubstitutionMatrix(object):
     """ Wrapper around a built-in Parasail substitution matrix.
     """
 
@@ -19,19 +16,21 @@ class ParasailSubstitutionMatrix(object):
         matrix = getattr(parasail, name)
         return cls(matrix)
 
+    @classmethod
+    def from_match_mismatch(cls, match, mismatch, alphabet='ACGTU'):
+        matrix = parasail.matrix_create(alphabet, match, mismatch)
+        return cls(matrix)
 
-class SimpleSubstitutionMatrix(object):
-    """ SubstitutionMatrix with a single match and mismatch score.
-    """
-
-    def __init__(self, match, mismatch, alphabet='ACGTU'):
-        self.alphabet = alphabet
-        self.match = match
-        self.mismatch = mismatch
-
-        self._matrix = parasail.matrix_create(
-            alphabet, match, mismatch
-        )
+    @classmethod
+    def from_dict(cls, d):
+        alphabet = str(d.keys())
+        matrix = parasail.matrix_create(alphabet, 1, -1)
+        for i, x in enumerate(alphabet):
+            for j, y in enumerate(alphabet):
+                value = d.get(x, {}).get(y)
+                if value is not None:
+                    matrix.set_value(i, j, value)
+        return cls(matrix)
 
 
 # Local alignment functions
@@ -47,7 +46,7 @@ def local_pairwise_align_nucleotide(
     _check_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
-        substitution_matrix = SimpleSubstitutionMatrix(
+        substitution_matrix = SubstitutionMatrix.from_match_mismatch(
             match_score, mismatch_score
         )
 
@@ -63,7 +62,7 @@ def local_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
     _check_protein_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
-        substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
+        substitution_matrix = SubstitutionMatrix.from_name("blosum50")
 
     return local_pairwise_align(seq1, seq2, gap_open_penalty,
                                 gap_extend_penalty, substitution_matrix)
@@ -72,6 +71,9 @@ def local_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
 def local_pairwise_align(seq1, seq2, gap_open_penalty,
                          gap_extend_penalty, substitution_matrix):
 
+    if isinstance(substitution_matrix, dict):
+        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
+    
     seq1_str = str(seq1)
     seq2_str = str(seq2)
 
@@ -100,13 +102,11 @@ def global_pairwise_align_nucleotide(
         match_score=2, mismatch_score=-3,
         substitution_matrix=None):
 
-    # TODO: allow specifying subst. matrix as dict
-
     _check_seq_types(seq1, seq2, types=(DNA, RNA, TabularMSA))
     _check_nucleotide_seq_types(seq1, seq2, types=(DNA, RNA))
 
     if substitution_matrix is None:
-        substitution_matrix = SimpleSubstitutionMatrix(
+        substitution_matrix = SubstitutionMatrix.from_match_mismatch(
             match_score, mismatch_score
         )
 
@@ -122,7 +122,7 @@ def global_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
     _check_protein_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
-        substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
+        substitution_matrix = SubstitutionMatrix.from_name("blosum50")
 
     return global_pairwise_align(seq1, seq2, gap_open_penalty,
                                  gap_extend_penalty, substitution_matrix)
@@ -130,6 +130,9 @@ def global_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
 
 def global_pairwise_align(seq1, seq2, gap_open_penalty,
                           gap_extend_penalty, substitution_matrix):
+
+    if isinstance(substitution_matrix, dict):
+        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
 
     seq1_str = str(seq1)
     seq2_str = str(seq2)
@@ -165,7 +168,7 @@ def semiglobal_pairwise_align_nucleotide(
     _check_nucleotide_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
-        substitution_matrix = SimpleSubstitutionMatrix(
+        substitution_matrix = SubstitutionMatrix.from_match_mismatch(
             match_score, mismatch_score
         )
 
@@ -174,21 +177,24 @@ def semiglobal_pairwise_align_nucleotide(
     )
 
 def semiglobal_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
-                                 gap_extend_penalty=1,
-                                 substitution_matrix=None):
+                                      gap_extend_penalty=1,
+                                      substitution_matrix=None):
 
     _check_seq_types(seq1, seq2, types=(Protein, TabularMSA))
     _check_protein_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
-        substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
+        substitution_matrix = SubstitutionMatrix.from_name("blosum50")
 
     return semiglobal_pairwise_align(seq1, seq2, gap_open_penalty,
-                                 gap_extend_penalty, substitution_matrix)
+                                     gap_extend_penalty, substitution_matrix)
 
 
 def semiglobal_pairwise_align(seq1, seq2, gap_open_penalty,
-                          gap_extend_penalty, substitution_matrix):
+                              gap_extend_penalty, substitution_matrix):
+
+    if isinstance(substitution_matrix, dict):
+        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
 
     seq1_str = str(seq1)
     seq2_str = str(seq2)
