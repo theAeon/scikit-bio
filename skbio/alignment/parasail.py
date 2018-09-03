@@ -60,6 +60,7 @@ def local_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
                                  substitution_matrix=None):
 
     _check_seq_types(seq1, seq2, types=(Protein,))
+    _check_protein_seq_types(seq1, seq2)
 
     if substitution_matrix is None:
         substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
@@ -76,6 +77,124 @@ def local_pairwise_align(seq1, seq2, gap_open_penalty,
 
     matrix = substitution_matrix._matrix
     result = parasail.sw_trace(
+        seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
+    )
+
+    cigar = result.cigar
+    aligned1, aligned2 = _expand_aligned(cigar, seq1_str, seq2_str)
+    msa = TabularMSA([_wrap_aligned(seq1, aligned1),
+                      _wrap_aligned(seq2, aligned2)])
+
+    score = result.score
+    start_end_positions = [(cigar.beg_query, result.end_query),
+                           (cigar.beg_ref, result.end_ref)]
+
+    return msa, score, start_end_positions
+
+
+# Global alignment functions
+
+def global_pairwise_align_nucleotide(
+        seq1, seq2, gap_open_penalty=5,
+        gap_extend_penalty=2,
+        match_score=2, mismatch_score=-3,
+        substitution_matrix=None):
+
+    # TODO: allow specifying subst. matrix as dict
+
+    _check_seq_types(seq1, seq2, types=(DNA, RNA, TabularMSA))
+    _check_nucleotide_seq_types(seq1, seq2, types=(DNA, RNA))
+
+    if substitution_matrix is None:
+        substitution_matrix = SimpleSubstitutionMatrix(
+            match_score, mismatch_score
+        )
+
+    return global_pairwise_align(
+        seq1, seq2, gap_open_penalty, gap_extend_penalty, substitution_matrix
+    )
+
+def global_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
+                                 gap_extend_penalty=1,
+                                 substitution_matrix=None):
+
+    _check_seq_types(seq1, seq2, types=(Protein, TabularMSA))
+    _check_protein_seq_types(seq1, seq2)
+
+    if substitution_matrix is None:
+        substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
+
+    return global_pairwise_align(seq1, seq2, gap_open_penalty,
+                                 gap_extend_penalty, substitution_matrix)
+
+
+def global_pairwise_align(seq1, seq2, gap_open_penalty,
+                          gap_extend_penalty, substitution_matrix):
+
+    seq1_str = str(seq1)
+    seq2_str = str(seq2)
+
+    matrix = substitution_matrix._matrix
+    result = parasail.nw_trace(
+        seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
+    )
+
+    cigar = result.cigar
+    aligned1, aligned2 = _expand_aligned(cigar, seq1_str, seq2_str)
+    msa = TabularMSA([_wrap_aligned(seq1, aligned1),
+                      _wrap_aligned(seq2, aligned2)])
+
+    score = result.score
+    start_end_positions = [(cigar.beg_query, result.end_query),
+                           (cigar.beg_ref, result.end_ref)]
+
+    return msa, score, start_end_positions
+
+
+# Semiglobal alignment functions
+
+def semiglobal_pairwise_align_nucleotide(
+        seq1, seq2, gap_open_penalty=5,
+        gap_extend_penalty=2,
+        match_score=2, mismatch_score=-3,
+        substitution_matrix=None):
+
+    # TODO: allow specifying subst. matrix as dict
+
+    _check_seq_types(seq1, seq2, types=(DNA, RNA, TabularMSA))
+    _check_nucleotide_seq_types(seq1, seq2)
+
+    if substitution_matrix is None:
+        substitution_matrix = SimpleSubstitutionMatrix(
+            match_score, mismatch_score
+        )
+
+    return semiglobal_pairwise_align(
+        seq1, seq2, gap_open_penalty, gap_extend_penalty, substitution_matrix
+    )
+
+def semiglobal_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
+                                 gap_extend_penalty=1,
+                                 substitution_matrix=None):
+
+    _check_seq_types(seq1, seq2, types=(Protein, TabularMSA))
+    _check_protein_seq_types(seq1, seq2)
+
+    if substitution_matrix is None:
+        substitution_matrix = ParasailSubstitutionMatrix.from_name("blosum50")
+
+    return semiglobal_pairwise_align(seq1, seq2, gap_open_penalty,
+                                 gap_extend_penalty, substitution_matrix)
+
+
+def semiglobal_pairwise_align(seq1, seq2, gap_open_penalty,
+                          gap_extend_penalty, substitution_matrix):
+
+    seq1_str = str(seq1)
+    seq2_str = str(seq2)
+
+    matrix = substitution_matrix._matrix
+    result = parasail.sg_trace(
         seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
     )
 
@@ -167,3 +286,27 @@ def _check_seq_types(*seqs, types=(DNA, RNA)):
                 seq_type.__name__
             )
         )
+
+
+def _check_protein_seq_types(*seqs):
+    if len(seqs) == 0:
+        return
+
+    for seq in seqs:
+        if isinstance(seq, TabularMSA) and not issubclass(seq.dtype, Protein):
+            raise TypeError(
+                "`seq1` and `seq2` must be TabularMSA with Protein dtype, "
+                "not dtype %r" % seq.dtype.__name__
+            )        
+
+
+def _check_nucleotide_seq_types(*seqs, types=(DNA, RNA)):
+    if len(seqs) == 0:
+        return
+
+    for seq in seqs:
+        if isinstance(seq, TabularMSA) and not issubclass(seq.dtype, types):
+            raise TypeError(
+                "`seq1` and `seq2` must be TabularMSA with DNA or RNA dtype, "
+                "not dtype %r" % seq.dtype.__name__
+            )        
