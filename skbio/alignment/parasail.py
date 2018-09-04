@@ -33,6 +33,39 @@ class SubstitutionMatrix(object):
         return cls(matrix)
 
 
+class Aligner(object):
+
+    def __init__(self,
+                 gap_open, gap_extend,
+                 match_mismatch=None, matrix=None,
+                 method=None):
+
+        self.align_method = _init_parasail_method(method)
+        self.matrix = _init_substitution_matrix(match_mismatch, matrix)
+        self.gap_open = gap_open
+        self.gap_extend = gap_extend
+
+    def align(self, s1, s2):
+        s1_str = str(s1)
+        s2_str = str(s2)
+
+        matrix = self.matrix._matrix
+        result = self.align_method(
+            s1_str, s2_str, self.gap_open, self.gap_extend, matrix
+        )
+
+        cigar = result.cigar
+        aligned1, aligned2 = _expand_aligned(cigar, s1_str, s2_str)
+        msa = TabularMSA([_wrap_aligned(s1, aligned1),
+                          _wrap_aligned(s2, aligned2)])
+
+        score = result.score
+        start_end_positions = [(cigar.beg_query, result.end_query),
+                               (cigar.beg_ref, result.end_ref)]
+
+        return msa, score, start_end_positions
+
+
 # Local alignment functions
 
 def local_pairwise_align_nucleotide(
@@ -71,28 +104,11 @@ def local_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
 def local_pairwise_align(seq1, seq2, gap_open_penalty,
                          gap_extend_penalty, substitution_matrix):
 
-    if isinstance(substitution_matrix, dict):
-        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
-    
-    seq1_str = str(seq1)
-    seq2_str = str(seq2)
-
-    matrix = substitution_matrix._matrix
-    result = parasail.sw_trace(
-        seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
+    aln = Aligner(
+        gap_open_penalty, gap_extend_penalty, matrix=substitution_matrix,
+        method='sw'
     )
-
-    cigar = result.cigar
-    aligned1, aligned2 = _expand_aligned(cigar, seq1_str, seq2_str)
-    msa = TabularMSA([_wrap_aligned(seq1, aligned1),
-                      _wrap_aligned(seq2, aligned2)])
-
-    score = result.score
-    start_end_positions = [(cigar.beg_query, result.end_query),
-                           (cigar.beg_ref, result.end_ref)]
-
-    return msa, score, start_end_positions
-
+    return aln.align(seq1, seq2)
 
 # Global alignment functions
 
@@ -131,27 +147,11 @@ def global_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
 def global_pairwise_align(seq1, seq2, gap_open_penalty,
                           gap_extend_penalty, substitution_matrix):
 
-    if isinstance(substitution_matrix, dict):
-        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
-
-    seq1_str = str(seq1)
-    seq2_str = str(seq2)
-
-    matrix = substitution_matrix._matrix
-    result = parasail.nw_trace(
-        seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
+    aln = Aligner(
+        gap_open_penalty, gap_extend_penalty, matrix=substitution_matrix,
+        method='nw',
     )
-
-    cigar = result.cigar
-    aligned1, aligned2 = _expand_aligned(cigar, seq1_str, seq2_str)
-    msa = TabularMSA([_wrap_aligned(seq1, aligned1),
-                      _wrap_aligned(seq2, aligned2)])
-
-    score = result.score
-    start_end_positions = [(cigar.beg_query, result.end_query),
-                           (cigar.beg_ref, result.end_ref)]
-
-    return msa, score, start_end_positions
+    return aln.align(seq1, seq2)
 
 
 # Semiglobal alignment functions
@@ -193,27 +193,11 @@ def semiglobal_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
 def semiglobal_pairwise_align(seq1, seq2, gap_open_penalty,
                               gap_extend_penalty, substitution_matrix):
 
-    if isinstance(substitution_matrix, dict):
-        substitution_matrix = SubstitutionMatrix.from_dict(substitution_matrix)
-
-    seq1_str = str(seq1)
-    seq2_str = str(seq2)
-
-    matrix = substitution_matrix._matrix
-    result = parasail.sg_trace(
-        seq1_str, seq2_str, gap_open_penalty, gap_extend_penalty, matrix
+    aln = Aligner(
+        gap_open_penalty, gap_extend_penalty, matrix=substitution_matrix,
+        method='sg'
     )
-
-    cigar = result.cigar
-    aligned1, aligned2 = _expand_aligned(cigar, seq1_str, seq2_str)
-    msa = TabularMSA([_wrap_aligned(seq1, aligned1),
-                      _wrap_aligned(seq2, aligned2)])
-
-    score = result.score
-    start_end_positions = [(cigar.beg_query, result.end_query),
-                           (cigar.beg_ref, result.end_ref)]
-
-    return msa, score, start_end_positions
+    return aln.align(seq1, seq2)
 
 
 # Internal helpers
@@ -316,3 +300,39 @@ def _check_nucleotide_seq_types(*seqs, types=(DNA, RNA)):
                 "`seq1` and `seq2` must be TabularMSA with DNA or RNA dtype, "
                 "not dtype %r" % seq.dtype.__name__
             )        
+
+
+def _init_substitution_matrix(match_mismatch_score=None, matrix=None):
+    if matrix is not None:
+        if isinstance(matrix, dict):
+            matrix = SubstitutionMatrix.from_dict(
+                matrix
+            )
+        elif isinstance(matrix, str):
+            matrix = SubstitutionMatrix.from_name(matrix)
+    elif match_mismatch_score is not None:
+        matrix = SubstitutionMatrix.from_match_mismatch(
+            *match_mismatch_score
+        )
+    else:
+        raise ValueError("Supply either a match/mismatch score, "
+                         "a name of a substitution matrix (e.g. "
+                         "'blosum50'), or a substitution matrix "
+                         "instance")
+    return matrix
+
+
+def _init_parasail_method(method):
+    if isinstance(method, str):
+        try:
+            method_name = {
+                'nw': 'nw_trace',
+                'sw': 'sw_trace',
+                'sg': 'sg_trace',
+            }[method]
+        except KeyError:
+            raise ValueError("No such alignment method: {!r}".format(method))
+        else:
+            method = getattr(parasail, method_name)
+
+    return method
