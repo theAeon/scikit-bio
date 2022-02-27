@@ -27,6 +27,7 @@ END: Cython Metadata */
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pythoncapi_compat.h"
 #ifndef Py_PYTHON_H
     #error Python headers needed to compile C extensions, please install development version of Python.
 #elif PY_VERSION_HEX < 0x02060000 || (0x03000000 <= PY_VERSION_HEX && PY_VERSION_HEX < 0x03030000)
@@ -10360,9 +10361,9 @@ static void __pyx_tp_dealloc_5skbio_9alignment_12_ssw_wrapper_AlignmentStructure
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
-    ++Py_REFCNT(o);
+    Py_SET_REFCNT(o, (Py_REFCNT(o) + 1));
     __pyx_pw_5skbio_9alignment_12_ssw_wrapper_18AlignmentStructure_3__dealloc__(o);
-    --Py_REFCNT(o);
+    Py_SET_REFCNT(o, (Py_REFCNT(o) - 1));
     PyErr_Restore(etype, eval, etb);
   }
   Py_CLEAR(p->read_sequence);
@@ -10567,9 +10568,9 @@ static void __pyx_tp_dealloc_5skbio_9alignment_12_ssw_wrapper_StripedSmithWaterm
   {
     PyObject *etype, *eval, *etb;
     PyErr_Fetch(&etype, &eval, &etb);
-    ++Py_REFCNT(o);
+    Py_SET_REFCNT(o, (Py_REFCNT(o) + 1));
     __pyx_pw_5skbio_9alignment_12_ssw_wrapper_20StripedSmithWaterman_5__dealloc__(o);
-    --Py_REFCNT(o);
+    Py_SET_REFCNT(o, (Py_REFCNT(o) - 1));
     PyErr_Restore(etype, eval, etb);
   }
   Py_CLEAR(p->read_sequence);

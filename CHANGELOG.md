@@ -39,6 +39,8 @@
 
 * Now buildable on non-x86 platforms due to use of the [SIMD Everywhere](https://github.com/simd-everywhere/simde) library.
 
+* Support Python 3.10 C API
+
 ## Version 0.5.6
 
 ### Features
