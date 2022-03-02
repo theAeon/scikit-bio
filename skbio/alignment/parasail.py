@@ -87,6 +87,7 @@ def local_pairwise_align_nucleotide(
         seq1, seq2, gap_open_penalty, gap_extend_penalty, substitution_matrix
     )
 
+
 def local_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
                                  gap_extend_penalty=1,
                                  substitution_matrix=None):
@@ -112,6 +113,7 @@ def local_pairwise_align(seq1, seq2, gap_open_penalty,
 
 # Global alignment functions
 
+
 def global_pairwise_align_nucleotide(
         seq1, seq2, gap_open_penalty=5,
         gap_extend_penalty=2,
@@ -130,9 +132,10 @@ def global_pairwise_align_nucleotide(
         seq1, seq2, gap_open_penalty, gap_extend_penalty, substitution_matrix
     )
 
+
 def global_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
-                                 gap_extend_penalty=1,
-                                 substitution_matrix=None):
+                                  gap_extend_penalty=1,
+                                  substitution_matrix=None):
 
     _check_seq_types(seq1, seq2, types=(Protein, TabularMSA))
     _check_protein_seq_types(seq1, seq2)
@@ -175,6 +178,7 @@ def semiglobal_pairwise_align_nucleotide(
     return semiglobal_pairwise_align(
         seq1, seq2, gap_open_penalty, gap_extend_penalty, substitution_matrix
     )
+
 
 def semiglobal_pairwise_align_protein(seq1, seq2, gap_open_penalty=11,
                                       gap_extend_penalty=1,
@@ -287,7 +291,7 @@ def _check_protein_seq_types(*seqs):
             raise TypeError(
                 "`seq1` and `seq2` must be TabularMSA with Protein dtype, "
                 "not dtype %r" % seq.dtype.__name__
-            )        
+            )
 
 
 def _check_nucleotide_seq_types(*seqs, types=(DNA, RNA)):
@@ -299,7 +303,7 @@ def _check_nucleotide_seq_types(*seqs, types=(DNA, RNA)):
             raise TypeError(
                 "`seq1` and `seq2` must be TabularMSA with DNA or RNA dtype, "
                 "not dtype %r" % seq.dtype.__name__
-            )        
+            )
 
 
 def _init_substitution_matrix(match_mismatch_score=None, matrix=None):
